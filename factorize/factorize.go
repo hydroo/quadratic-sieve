@@ -62,8 +62,6 @@ func factorBase(n *big.Int) []*big.Int {
 		}
 	}
 
-	fmt.Println(n, primes)
-
 	return primes
 }
 

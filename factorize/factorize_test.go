@@ -2,15 +2,13 @@ package main
 
 
 import (
-	"big"
 	"fmt"
+	"math/big"
 	"testing"
 )
 
 
 func TestFactorize(t *testing.T) {
-
-	initPrimes()
 
 	type Number struct {
 		n, x, y int64
@@ -32,7 +30,7 @@ func TestFactorize(t *testing.T) {
 
 	for _, num := range nums {
 
-		x, y := factorize(big.NewInt(num.n))
+		x, y := factorize(big.NewInt(num.n), false)
 
 		xShould.SetInt64(num.x)
 		yShould.SetInt64(num.y)

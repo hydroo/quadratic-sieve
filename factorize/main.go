@@ -1,8 +1,8 @@
 package main
 
 import (
-	"math/big"
 	"fmt"
+	"math/big"
 	"os"
 )
 
