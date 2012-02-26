@@ -107,12 +107,11 @@ func isPrimeBruteForce(n *big.Int) bool {
 		return false
 	}
 
-	approxSqrt := big.NewInt(2)
-	approxSqrt.Exp(approxSqrt, big.NewInt(int64((n.BitLen()+1)/2)), nil)
+	sqrtCeil := SquareRootCeil(n)
 
 	rest := big.NewInt(0)
 
-	for mod := big.NewInt(3); mod.Cmp(approxSqrt) <= 0; mod.Add(mod, Two) {
+	for mod := big.NewInt(3); mod.Cmp(sqrtCeil) <= 0; mod.Add(mod, Two) {
 		rest.Mod(n, mod)
 		if rest.Cmp(Zero) == 0 {
 			//fmt.Println(n, " - is disisible by ", mod)
@@ -172,4 +171,49 @@ func generateFirstFewPrimes() []*big.Int {
 }
 
 
+func SquareRootCeil(n *big.Int) *big.Int {
+
+	if n.Cmp(One) == -1 {
+		panic("cannot get square root of a number smaller than one")
+	}
+
+	upperLimit := big.NewInt(2)
+	lowerLimit := big.NewInt(2)
+
+	upperLimitExp := big.NewInt(int64(math.Ceil(float64(n.BitLen()) / 2)))
+	lowerLimitExp := big.NewInt(int64(math.Floor(float64(n.BitLen()-1) / 2)))
+
+	upperLimit.Exp(upperLimit, upperLimitExp, nil)
+	lowerLimit.Exp(lowerLimit, lowerLimitExp, nil)
+
+	middle := big.NewInt(0)
+
+	middleSquared := big.NewInt(0)
+
+	/* binary search */
+	for upperLimit.Cmp(lowerLimit) != 0 {
+
+		if upperLimit.Cmp(lowerLimit) == -1 {
+			panic("upperlimit < lowerlimit shouldnt happen")
+		}
+
+		middle.Add(upperLimit, lowerLimit)
+		middle.Div(middle, Two)
+
+		middleSquared.Exp(middle, Two, nil)
+
+		if middleSquared.Cmp(n) == -1 {
+
+			if lowerLimit.Cmp(middle) == 0 {
+				return upperLimit
+			}
+
+			lowerLimit.Set(middle)
+		} else {
+			upperLimit.Set(middle)
+		}
+	}
+
+	return upperLimit
+}
 

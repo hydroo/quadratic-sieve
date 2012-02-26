@@ -10,56 +10,12 @@ import (
 	"github.com/hydroo/quadratic-sieve/misc"
 )
 
+
 /* helper */
 func nanoSecondsToString(n int64) string {
 	return fmt.Sprintf("%f", float64(n)/1000000000.0)
 }
 
-func SquareRootCeil(n *big.Int) *big.Int {
-
-	if n.Cmp(misc.One) == -1 {
-		panic("cannot get square root of a number smaller than one")
-	}
-
-	upperLimit := big.NewInt(2)
-	lowerLimit := big.NewInt(2)
-
-	upperLimitExp := big.NewInt(int64(math.Ceil(float64(n.BitLen()) / 2)))
-	lowerLimitExp := big.NewInt(int64(math.Floor(float64(n.BitLen()-1) / 2)))
-
-	upperLimit.Exp(upperLimit, upperLimitExp, nil)
-	lowerLimit.Exp(lowerLimit, lowerLimitExp, nil)
-
-	middle := big.NewInt(0)
-
-	middleSquared := big.NewInt(0)
-
-	/* binary search */
-	for upperLimit.Cmp(lowerLimit) != 0 {
-
-		if upperLimit.Cmp(lowerLimit) == -1 {
-			panic("upperlimit < lowerlimit shouldnt happen")
-		}
-
-		middle.Add(upperLimit, lowerLimit)
-		middle.Div(middle, misc.Two)
-
-		middleSquared.Exp(middle, misc.Two, nil)
-
-		if middleSquared.Cmp(n) == -1 {
-
-			if lowerLimit.Cmp(middle) == 0 {
-				return upperLimit
-			}
-
-			lowerLimit.Set(middle)
-		} else {
-			upperLimit.Set(middle)
-		}
-	}
-
-	return upperLimit
-}
 
 func factorBase(n *big.Int) []*big.Int {
 
@@ -120,6 +76,7 @@ func factorBase(n *big.Int) []*big.Int {
 	return ret
 }
 
+
 func sieveInterval(n *big.Int) (*big.Int, *big.Int) {
 
 	lnn := float64(n.BitLen()) * math.Log(2)
@@ -135,7 +92,7 @@ func sieveInterval(n *big.Int) (*big.Int, *big.Int) {
 	L := big.NewInt(0)
 	L.Exp(misc.Two, big.NewInt(exp), nil) // magic parameter (wikipedia)
 
-	sqrtN := SquareRootCeil(n)
+	sqrtN := misc.SquareRootCeil(n)
 
 	sieveMin := big.NewInt(0)
 	sieveMin.Sub(sqrtN, L)
@@ -481,3 +438,4 @@ func factorize(n *big.Int) (*big.Int, *big.Int) {
 	return x, y
 
 }
+
