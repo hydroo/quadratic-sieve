@@ -31,21 +31,17 @@ func factorBase(n *big.Int) []*big.Int {
 
 	S := int64(math.Ceil(math.Pow(math.E, exp))) // magic parameter (wikipedia)
 
-	primes := make([]*big.Int, S)
+	primes := make([]*big.Int, 1)
+	primes[0] = misc.MinusOne
 
 	nModP := big.NewInt(0)
 
-	count := 0
 	for p := int64(2); p <= S; p += 1 {
 		if misc.IsPrimeBruteForceSmallInt(p) {
 
 			P := big.NewInt(int64(p))
 
 			nModP.Mod(n, P)
-
-			if nModP.BitLen() > 63 {
-				panic("oh noez, number to large. rewrite this code")
-			}
 
 			/* iterate through the whole ring of Z_p and test wether some i^2 equals n -> it is square mod p */
 			isSquare := false
@@ -60,20 +56,14 @@ func factorBase(n *big.Int) []*big.Int {
 			}
 
 			if isSquare == true {
-				primes[count] = P
-				count += 1
+				primes = append(primes, P)
 			}
 		}
 	}
 
-	/* copy results into a new array to save space */
-	ret := make([]*big.Int, count+1)
-	ret[0] = big.NewInt(-1)
-	for i := 0; i < count; i += 1 {
-		ret[i+1] = primes[i]
-	}
+	fmt.Println(n, primes)
 
-	return ret
+	return primes
 }
 
 
