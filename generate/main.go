@@ -10,13 +10,6 @@ import (
 
 func main() {
 
-	args := os.Args[1:]
-
-	primes := false
-	composites := false
-
-	min := big.NewInt(1)
-
 	var helpText string
 	helpText += "generate [options]                                             \n"
 	helpText += "                                                               \n"
@@ -26,6 +19,13 @@ func main() {
 	helpText += "                            equal than 'min'                   \n"
 	helpText += "                            composed of two primes             \n"
 	helpText += "  default for 'min' is 1                                       \n"
+
+	args := os.Args[1:]
+
+	primes := false
+	composites := false
+
+	min := big.NewInt(1)
 
 	if len(args) == 0 {
 		fmt.Print(helpText)
