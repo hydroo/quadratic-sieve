@@ -43,7 +43,8 @@ func factorBase(n *big.Int) []*big.Int {
 
 			nModP.Mod(n, P)
 
-			/* iterate through the whole ring of Z_p and test wether some i^2 equals n -> it is square mod p */
+			/* iterate through the whole ring of Z_p and test wether some i^2 equals n
+			n has to be (some) square mod P */
 			isSquare := false
 			iSquaredModP := big.NewInt(0)
 			i := big.NewInt(0)
