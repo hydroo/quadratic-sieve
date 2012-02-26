@@ -25,7 +25,7 @@ func init() {
 }
 
 
-func even (n *big.Int) bool {
+func isEven (n *big.Int) bool {
 	rest := big.NewInt(0)
 	rest.Mod(n, Two)
 	return rest.Cmp(Zero) == 0
@@ -48,25 +48,15 @@ func IsPrime(n *big.Int) bool {
 		return true
 	} else {
 		if cmpMillion <= 0 {
-			ret := isPrimeBruteForce(n)
-			if ret == false {
-				//fmt.Println(n, " - brute force")
-			} else {
-				//fmt.Println(n, " +")
-			}
-			return ret
+			return isPrimeBruteForce(n)
 		} else {
 			if isPrimeFirstFew(n) == false {
-				//fmt.Println(n, " - first few")
 				return false
 			} else if isPrimeMillerRabin(n) == false {
-				//fmt.Println(n, " - miller rabin")
 				return false
 			} else if isPrimeBruteForce(n) == false {
-				//fmt.Println(n , " - brute force")
 				return false
 			} else {
-				//fmt.Println(n, " +")
 				return true
 			}
 		}
@@ -98,12 +88,8 @@ func isPrimeBruteForce(n *big.Int) bool {
 	if cmp == 0 {
 		return true
 	} else if cmp == -1 {
-		// less than Two
-		//fmt.Println(n, " - less than Two")
 		return false
-	} else if even(n) == true {
-		// even
-		//fmt.Println(n, " - even")
+	} else if isEven(n) == true {
 		return false
 	}
 
@@ -114,7 +100,6 @@ func isPrimeBruteForce(n *big.Int) bool {
 	for mod := big.NewInt(3); mod.Cmp(sqrtCeil) <= 0; mod.Add(mod, Two) {
 		rest.Mod(n, mod)
 		if rest.Cmp(Zero) == 0 {
-			//fmt.Println(n, " - is disisible by ", mod)
 			return false
 		}
 	}
@@ -124,6 +109,7 @@ func isPrimeBruteForce(n *big.Int) bool {
 
 
 func IsPrimeBruteForceSmallInt(n int64) bool {
+
 	if n == 2 {
 		return true
 	} else if n < 2 || n % 2 == 0 {
