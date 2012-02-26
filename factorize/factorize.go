@@ -392,13 +392,13 @@ func combine(cSquaredList, cis []*big.Int, exponents [][]int, factorBase []*big.
 }
 
 /* returns nil, nil upon failure */
-func factorize(n *big.Int) (*big.Int, *big.Int) {
+func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
 	t1 := time.Now()
 
 	factorBase := factorBase(n)
 
-	t2 := time.Now()
+	//t2 := time.Now()
 
 	min, max := sieveInterval(n)
 
@@ -421,17 +421,27 @@ func factorize(n *big.Int) (*big.Int, *big.Int) {
 	x, y := combine(factoredSieveNums, cis, exponents, factorBase, n)
 
 	t5 := time.Now()
-	fmt.Sprint(t1, t2, t3, t4, t5) // Q_UNUSED(...), (void) ...
 
 	if x != nil && y != nil && x.Cmp(y) == 1 {
 		x, y = y, x
 	}
 
 	if x != nil && y != nil {
-		fmt.Println(n, "+", x, y, "wall", nanoSecondsToString(t5.Sub(t1).Nanoseconds()), "sieve", nanoSecondsToString(t4.Sub(t3).Nanoseconds()), "combing", nanoSecondsToString(t5.Sub(t4).Nanoseconds()))
+		fmt.Print(n, " + ", x, y)
+		if benchmark == true {
+			fmt.Print(" wall ", nanoSecondsToString(t5.Sub(t1).Nanoseconds()),
+			" sieve ", nanoSecondsToString(t4.Sub(t3).Nanoseconds()),
+			" combing ", nanoSecondsToString(t5.Sub(t4).Nanoseconds()))
+		}
 	} else {
-		fmt.Println(n, "- - -", "wall", nanoSecondsToString(t5.Sub(t1).Nanoseconds()), "sieve", nanoSecondsToString(t4.Sub(t3).Nanoseconds()), "combing", nanoSecondsToString(t5.Sub(t4).Nanoseconds()))
+		fmt.Print(n, " - - -")
+		if benchmark == true {
+			fmt.Print(" wall ", nanoSecondsToString(t5.Sub(t1).Nanoseconds()),
+			" sieve ", nanoSecondsToString(t4.Sub(t3).Nanoseconds()),
+			" combing ", nanoSecondsToString(t5.Sub(t4).Nanoseconds()))
+		}
 	}
+	fmt.Println()
 
 	//fmt.Println("n:", n,  "sieve interval: [", min, "..", max, "] =", max.Int64() - min.Int64(), "factorbase:", factorBase, "factoredsievenums(",len(factoredSieveNums),"):", factoredSieveNums, "c(i)", cis, "exponents:", exponents, "result:", x, "*", y)
 
