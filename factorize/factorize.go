@@ -11,12 +11,6 @@ import (
 )
 
 
-/* helper */
-func nanoSecondsToString(n int64) string {
-	return fmt.Sprintf("%f", float64(n)/1000000000.0)
-}
-
-
 func factorBase(n *big.Int) []*big.Int {
 
 	/* calculate 'S' upper bound for the primes to collect */
@@ -177,6 +171,7 @@ func sieveWork(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int, retCis, r
 	done <- true
 }
 
+
 func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) ([]*big.Int, []*big.Int, [][]int) {
 
 	intervalBig := big.NewInt(0)
@@ -269,6 +264,7 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) ([]*big.Int, 
 
 	return retDs, retCi, retExponents
 }
+
 
 func combineRecursively(start int, currentExponents []int, cMul *big.Int, cSquaredList, cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.Int) (*big.Int, *big.Int) {
 
@@ -370,6 +366,7 @@ func combineRecursively(start int, currentExponents []int, cMul *big.Int, cSquar
 	return nil, nil
 }
 
+
 /* usually this step should be performed by a solver for a system of linear equations in Z_2
 but this is too much work for now, so it just tests all (all subsets of the powerset of all exponent vectors)
 the linear combinations of exponent vectors for evenness
@@ -390,6 +387,7 @@ func combine(cSquaredList, cis []*big.Int, exponents [][]int, factorBase []*big.
 
 	return combineRecursively(0, currentExponents, cMul, cSquaredList, cis, exponents, factorBase, n)
 }
+
 
 /* returns nil, nil upon failure */
 func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
@@ -446,6 +444,5 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 	//fmt.Println("n:", n,  "sieve interval: [", min, "..", max, "] =", max.Int64() - min.Int64(), "factorbase:", factorBase, "factoredsievenums(",len(factoredSieveNums),"):", factoredSieveNums, "c(i)", cis, "exponents:", exponents, "result:", x, "*", y)
 
 	return x, y
-
 }
 
