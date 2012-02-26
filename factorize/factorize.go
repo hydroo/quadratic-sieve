@@ -23,15 +23,21 @@ func factorBase(n *big.Int) []*big.Int {
 
 	lnlnn := math.Log(lnn)
 	exp := math.Sqrt(lnn*lnlnn) * 0.5
-	S := int(math.Ceil(math.Pow(math.E, exp))) // magic parameter (wikipedia)
+
+	if (exp >= 43) {
+		/* this is reached when trying to factorize about 2^1500 or larger */
+		panic("factorBase(): exponent too large ... reimplement this using big ints")
+	}
+
+	S := int64(math.Ceil(math.Pow(math.E, exp))) // magic parameter (wikipedia)
 
 	primes := make([]*big.Int, S)
 
 	nModP := big.NewInt(0)
 
 	count := 0
-	for p := 2; p <= S; p += 1 {
-		if misc.IsPrimeBruteForceSmallInt(int64(p)) {
+	for p := int64(2); p <= S; p += 1 {
+		if misc.IsPrimeBruteForceSmallInt(p) {
 
 			P := big.NewInt(int64(p))
 
