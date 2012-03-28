@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"runtime"
 	"time"
 
 	"github.com/hydroo/quadratic-sieve/misc"
@@ -62,7 +61,7 @@ func factorBase(n *big.Int) []*big.Int {
 }
 
 
-func sieveInterval(n *big.Int) (*big.Int, *big.Int) {
+func sieveInterval(n *big.Int) (min, max *big.Int) {
 
 	lnn := float64(n.BitLen()) * math.Log(2)
 
@@ -87,83 +86,8 @@ func sieveInterval(n *big.Int) (*big.Int, *big.Int) {
 	return sieveMin, sieveMax
 }
 
-func sieveWork(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int, retCis, retDs []*big.Int, retExponents [][]int, done chan<- bool) {
 
-	retIterator := 0
-
-	ci := big.NewInt(0)
-	ci.Set(cMin)
-	d := big.NewInt(0)
-	rest := big.NewInt(0)
-	tmpRest := big.NewInt(0)
-	tmpQuotient := big.NewInt(0)
-	exponents := make([]int, len(factorBase))
-
-	/* foreach c(i) */
-	for ; ci.Cmp(cMax) == -1; ci.Add(ci, misc.One) {
-
-		/* calculate c(i)^1 - n */
-		d.Mul(ci, ci)
-		d.Sub(d, n)
-
-		/* copy the result because we need to modify it and save c(i)^2 - n as well */
-		rest.Set(d)
-
-		for i, p := range factorBase {
-
-			exponents[i] = 0
-
-			repeat := true
-
-			/* repeat as long as rest % p == 0 -> add 1 to the exponent for each division by p */
-			for repeat == true {
-
-				if i == 0 {
-					/* needs special handling: p = -1 */
-					if rest.Sign() == -1 {
-						exponents[0] = 1
-						rest.Mul(rest, misc.MinusOne)
-					} else {
-						exponents[0] = 0
-					}
-					repeat = false
-					continue
-				}
-
-				tmpQuotient.DivMod(rest, p, tmpRest)
-
-				if tmpRest.Cmp(misc.Zero) == 0 {
-					exponents[i] += 1
-					rest.Set(tmpQuotient)
-				} else {
-					repeat = false
-				}
-
-				if tmpQuotient.Cmp(misc.Zero) == 0 {
-					repeat = false
-				}
-
-			}
-		}
-
-		/* if rest is 1 c(i)^2 - n has been successfully broken down into a number that can be represented through
-		the factor base -> save c(i)^2 and the exponents for the prime factors */
-		if rest.Cmp(misc.One) == 0 {
-			retDs[retIterator] = big.NewInt(0)
-			retDs[retIterator].Set(d)
-			retCis[retIterator] = big.NewInt(0)
-			retCis[retIterator].Set(ci)
-			retExponents[retIterator] = make([]int, len(factorBase))
-			copy(retExponents[retIterator], exponents)
-			retIterator += 1
-		}
-	}
-
-	done <- true
-}
-
-
-func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) ([]*big.Int, []*big.Int, [][]int) {
+func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*big.Int, retExponents [][]int) {
 
 	intervalBig := big.NewInt(0)
 	intervalBig.Sub(cMax, cMin)
@@ -173,93 +97,84 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) ([]*big.Int, 
 		panic("fufufu sieve interval too large. code newly.")
 	}
 
-	interval := int(intervalBig.Int64())
+	retCis = make([]*big.Int, 0)
+	retExponents = make([][]int, 0)
 
-	retCiTmp := make([]*big.Int, interval)
-	retDsTmp := make([]*big.Int, interval)
-	retExponentsTmp := make([][]int, interval)
-
-	threads := runtime.GOMAXPROCS(-1)
-	tasksRest := interval % threads
-	tasksStep := interval / threads
-
-	tasksStepBig := big.NewInt(int64(tasksStep))
-	tasksStepBigPlusOne := big.NewInt(int64(tasksStep + 1))
 
 	ci := big.NewInt(0)
 	ci.Set(cMin)
 
-	doneChannel := make(chan bool)
+	di := big.NewInt(0)
+	exponents := make([]int, len(factorBase))
+	rest := big.NewInt(0)
+	quotient := big.NewInt(0)
 
-	/* foreach c(i) */
-	for i := 0; ci.Cmp(cMax) <= 0; {
+	/* foreach c(i) in [cMin, cMax] */
+	for ; ci.Cmp(cMax) <= 0; ci.Add(ci, misc.One) {
 
-		cMinIt := big.NewInt(0)
-		cMaxIt := big.NewInt(0)
-		cMinIt.Set(ci)
+		/* d(i) = c(i)^2 - n */
+		di.Mul(ci, ci)
+		di.Sub(di, n)
 
-		j := 0
+		for i, p := range factorBase {
 
-		if tasksRest > 0 {
-			cMaxIt.Add(cMinIt, tasksStepBigPlusOne)
-			j = i + tasksStep + 1
-		} else {
-			cMaxIt.Add(cMinIt, tasksStepBig)
-			j = i + tasksStep
+			exponents[i] = 0
+
+			repeat := true
+
+			/* repeat as long as di % p == 0 -> add 1 to the exponent for each division by p */
+			for repeat == true {
+
+				if i == 0 {
+					/* needs special handling: p = -1 */
+					if di.Sign() == -1 {
+						exponents[0] = 1
+						di.Mul(di, misc.MinusOne)
+					} else {
+						exponents[0] = 0
+					}
+					repeat = false
+					continue
+				}
+
+				quotient.DivMod(di, p, rest)
+
+				if rest.Cmp(misc.Zero) == 0 {
+					exponents[i] += 1
+					di.Set(quotient)
+				} else {
+					repeat = false
+				}
+
+				if quotient.Cmp(misc.Zero) == 0 {
+					repeat = false
+				}
+
+			}
 		}
 
-		go sieveWork(n, factorBase, cMinIt, cMaxIt, retCiTmp[i:j], retDsTmp[i:j], retExponentsTmp[i:j], doneChannel)
+		/* if di is 1, d(i) has been successfully broken down and can be represented through
+		the factor base -> save c(i) and the exponents for the prime factors */
+		if di.Cmp(misc.One) == 0 {
 
-		if tasksRest > 0 {
-			ci.Add(ci, tasksStepBigPlusOne)
-			tasksRest -= 1
-			i += tasksStep + 1
-		} else {
-			ci.Add(ci, tasksStepBig)
-			i += tasksStep
+			cCopy := big.NewInt(0)
+			cCopy.Set(ci)
+			exponentsCopy := make([]int, len(exponents))
+			copy(exponentsCopy, exponents)
+
+			retCis = append(retCis, cCopy)
+			retExponents = append(retExponents, exponentsCopy)
 		}
+
 	}
 
-	max := threads
-	if tasksStep == 0 {
-		max = tasksRest
-	}
-
-	for i := 0; i < max; i += 1 {
-		<-doneChannel
-	}
-
-	retIterator := 0
-	for _, ci := range retCiTmp {
-		if ci != nil {
-			retIterator += 1
-		}
-	}
-
-	/* copy the result into new, shorter arrays */
-	retDs := make([]*big.Int, retIterator)
-	retCi := make([]*big.Int, retIterator)
-	retExponents := make([][]int, retIterator)
-
-	i := 0
-	j := 0
-	for ; j < interval; j += 1 {
-
-		if retCiTmp[j] != nil {
-			retDs[i] = retDsTmp[j] // c(i)^2 - n
-			retCi[i] = retCiTmp[j] // c(i)
-			retExponents[i] = retExponentsTmp[j]
-			i += 1
-		}
-	}
-
-	return retDs, retCi, retExponents
+	return retCis, retExponents
 }
 
 
-func combineRecursively(start int, currentExponents []int, cMul *big.Int, cSquaredList, cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.Int) (*big.Int, *big.Int) {
+func combineRecursively(start int, currentExponents []int, cMul *big.Int, cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.Int) (x_, y_ *big.Int) {
 
-	for i := start; i < len(cSquaredList); i += 1 {
+	for i := start; i < len(cis); i += 1 {
 
 		newCurrentExponents := make([]int, len(currentExponents))
 
@@ -347,7 +262,7 @@ func combineRecursively(start int, currentExponents []int, cMul *big.Int, cSquar
 			}
 		}
 
-		x, y := combineRecursively(i+1, newCurrentExponents, newCMul, cSquaredList, cis, exponents, factorBase, n)
+		x, y := combineRecursively(i+1, newCurrentExponents, newCMul, cis, exponents, factorBase, n)
 		if x != nil && y != nil {
 			return x, y
 		}
@@ -363,7 +278,7 @@ but this is too much work for now, so it just tests all (all subsets of the powe
 the linear combinations of exponent vectors for evenness
 
 returns nil, nil if nothing is found */
-func combine(cSquaredList, cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.Int) (*big.Int, *big.Int) {
+func combine(cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.Int) (x, y *big.Int) {
 
 	if len(exponents) == 0 {
 		return nil, nil
@@ -376,7 +291,7 @@ func combine(cSquaredList, cis []*big.Int, exponents [][]int, factorBase []*big.
 
 	cMul := big.NewInt(1)
 
-	return combineRecursively(0, currentExponents, cMul, cSquaredList, cis, exponents, factorBase, n)
+	return combineRecursively(0, currentExponents, cMul, cis, exponents, factorBase, n)
 }
 
 
@@ -387,13 +302,13 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
 	factorBase := factorBase(n)
 
-	//t2 := time.Now()
+	t2 := time.Now()
 
 	min, max := sieveInterval(n)
 
 	t3 := time.Now()
 
-	factoredSieveNums, cis, exponents := sieve(n, factorBase, min, max)
+	cis, exponents := sieve(n, factorBase, min, max)
 
 	t4 := time.Now()
 
@@ -401,15 +316,16 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
 	if len(cis) > combinationsLog2 {
 		/* avoid building too large powersets */
-		factoredSieveNums = factoredSieveNums[:combinationsLog2]
 		cis = cis[:combinationsLog2]
 		exponents = exponents[:combinationsLog2]
 	}
 
 	/* usually you want to solve this through an LGS ... TODO? */
-	x, y := combine(factoredSieveNums, cis, exponents, factorBase, n)
+	x, y := combine(cis, exponents, factorBase, n)
 
 	t5 := time.Now()
+
+	fmt.Sprint(t1, t2, t3, t4, t5)
 
 	if x != nil && y != nil && x.Cmp(y) == 1 {
 		x, y = y, x
@@ -432,7 +348,7 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 	}
 	fmt.Println()
 
-	//fmt.Println("n:", n,  "sieve interval: [", min, "..", max, "] =", max.Int64() - min.Int64(), "factorbase:", factorBase, "factoredsievenums(",len(factoredSieveNums),"):", factoredSieveNums, "c(i)", cis, "exponents:", exponents, "result:", x, "*", y)
+	//fmt.Println("n:", n,  "sieve interval: [", min, "..", max, "] =", max.Int64() - min.Int64(), "factorbase:", factorBase, "c(i)", cis, "exponents:", exponents, "result:", x, "*", y)
 
 	return x, y
 }
