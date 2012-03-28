@@ -28,9 +28,14 @@ func TestFactorize(t *testing.T) {
 	xShould := big.NewInt(0)
 	yShould := big.NewInt(0)
 
+
 	for _, num := range nums {
 
 		x, y := factorize(big.NewInt(num.n), false)
+
+		if x.Cmp(y) > 0 {
+			x, y = y, x
+		}
 
 		xShould.SetInt64(num.x)
 		yShould.SetInt64(num.y)
