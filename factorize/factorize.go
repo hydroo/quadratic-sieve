@@ -34,30 +34,26 @@ func factorBase(n *big.Int) []*big.Int {
 	primes := make([]*big.Int, 1)
 	primes[0] = misc.MinusOne
 
-	nModP := big.NewInt(0)
-
 	for p := int64(2); p <= S; p += 1 {
 		if misc.IsPrimeBruteForceSmallInt(p) {
-
+			
 			P := big.NewInt(int64(p))
 
+			nModP := big.NewInt(0)
 			nModP.Mod(n, P)
 
-			/* iterate through the whole ring of Z_p and test wether some i^2 equals n
-			n has to be (some) square mod P */
-			isSquare := false
-			iSquaredModP := big.NewInt(0)
-			i := big.NewInt(0)
-			for ; i.Cmp(P) == -1; i.Add(i, misc.One) {
-				iSquaredModP.Exp(i, misc.Two, P)
-				if iSquaredModP.Cmp(nModP) == 0 {
-					isSquare = true
-					break
-				}
-			}
-
-			if isSquare == true {
+			if p == 2 || nModP.Cmp(misc.Zero) == 0 {
+				/* n is always a square rest (mod 2), and 0 is always a squarerest of 0 */
 				primes = append(primes, P)
+			} else {
+				/* euler criterium. given ggt(a,p)=1: n is square rest mod p, iff n**((p-1)/2) \equiv 1 (mod p) */
+				result := big.NewInt(0)
+				result.Exp(n, big.NewInt((p-1)/2), P)
+				result.Mod(result,P)
+
+				if result.Cmp(misc.One) == 0 {
+					primes = append(primes, P)
+				}
 			}
 		}
 	}
