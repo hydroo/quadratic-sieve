@@ -104,8 +104,8 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*bi
 	ci := big.NewInt(0)
 	ci.Set(cMin)
 
-	di := big.NewInt(0)
-	exponents := make([]int, len(factorBase))
+	di := big.NewInt(0) /* to be factorized */
+	exponents := make([]int, len(factorBase)) /* exponents for the factors in factorbase for di */
 	rest := big.NewInt(0)
 	quotient := big.NewInt(0)
 
@@ -116,47 +116,40 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*bi
 		di.Mul(ci, ci)
 		di.Sub(di, n)
 
-		for i, p := range factorBase {
+		/* i = 0 (p = -1) needs special handling */
+		if di.Sign() == -1 {
+			exponents[0] = 1
+			di.Mul(di, misc.MinusOne)
+		} else {
+			exponents[0] = 0
+		}
+
+		for i := 1; i < len(factorBase); i += 1 {
+
+			p := factorBase[i]
 
 			exponents[i] = 0
 
-			repeat := true
-
 			/* repeat as long as di % p == 0 -> add 1 to the exponent for each division by p */
-			for repeat == true {
-
-				if i == 0 {
-					/* needs special handling: p = -1 */
-					if di.Sign() == -1 {
-						exponents[0] = 1
-						di.Mul(di, misc.MinusOne)
-					} else {
-						exponents[0] = 0
-					}
-					repeat = false
-					continue
-				}
-
+			for {
 				quotient.DivMod(di, p, rest)
 
 				if rest.Cmp(misc.Zero) == 0 {
 					exponents[i] += 1
 					di.Set(quotient)
 				} else {
-					repeat = false
+					break
 				}
 
 				if quotient.Cmp(misc.Zero) == 0 {
-					repeat = false
+					break
 				}
-
 			}
 		}
 
-		/* if di is 1, d(i) has been successfully broken down and can be represented through
-		the factor base -> save c(i) and the exponents for the prime factors */
+		/* if d(i) is 1, d(i) has been successfully broken down and can be represented through
+		the factor base -> save c(i) and the exponents for the prime factors in factorbase */
 		if di.Cmp(misc.One) == 0 {
-
 			cCopy := big.NewInt(0)
 			cCopy.Set(ci)
 			exponentsCopy := make([]int, len(exponents))
@@ -165,7 +158,6 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*bi
 			retCis = append(retCis, cCopy)
 			retExponents = append(retExponents, exponentsCopy)
 		}
-
 	}
 
 	return retCis, retExponents
@@ -295,7 +287,7 @@ func combine(cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.In
 }
 
 
-/* returns nil, nil upon failure */
+/* returns nil, nil if n cannot be factorized */
 func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
 	t1 := time.Now()
