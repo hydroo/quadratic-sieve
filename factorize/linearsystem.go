@@ -129,6 +129,24 @@ func (this Row) String() string {
 	return ret
 }
 
+
+func (this Row) Equals(other *Row) bool {
+
+	if this.columnCount != other.columnCount {
+		panic(fmt.Sprint("cannot compare rows of differing sizes. columnCount",
+				this.columnCount, "!=", other.columnCount))
+	}
+
+	for i, chunk := range this.chunks {
+		if chunk != other.chunks[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+
 /* *** private *** */
 
 func (this Row) checkIndex(index int) {
@@ -206,6 +224,24 @@ func (this LinearSystem) String() string {
 		ret += "\n"
 	}
 	return ret
+}
+
+
+func (this LinearSystem) Equals(other *LinearSystem) bool {
+
+	if this.rowCount != other.rowCount || this.columnCount != other.columnCount {
+		panic(fmt.Sprint("cannot compare linear systems of different size. rowCount", this.rowCount, "!=", other.rowCount,
+				"or columnCount", this.columnCount, "!=", other.columnCount))
+	}
+
+
+	for i, row := range this.rows {
+		if row.Equals(other.Row(i)) == false {
+			return false
+		}
+	}
+
+	return true
 }
 
 
