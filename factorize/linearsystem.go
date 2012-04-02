@@ -28,7 +28,7 @@ func (this Bit) String() string {
 
 /* *** Row *** ************************************************************* */
 type Row struct {
-	columns []uint64
+	chunks []uint64
 	columnCount int
 }
 
@@ -41,11 +41,11 @@ func NewRow(columnCount int) *Row {
 
 	var ret Row
 	ret.columnCount = columnCount
-	ret.columns = make([]uint64, (columnCount-1/64)+1)
+	ret.chunks = make([]uint64, (columnCount-1/64)+1)
 
-	for i, _ := range ret.columns {
+	for i, _ := range ret.chunks {
 		/* initialize to zero */
-		ret.columns[i] = 0x0000000000000000
+		ret.chunks[i] = 0x0000000000000000
 	}
 
 	return &ret
@@ -57,7 +57,7 @@ func (this Row) Column(index int) Bit {
 
 	column, bit, exp := convertIndex(index)
 
-	ret := Bit((this.columns[column] & bit) >> exp)
+	ret := Bit((this.chunks[column] & bit) >> exp)
 	ret.Check()
 	return ret
 }
@@ -70,9 +70,9 @@ func (this *Row) SetColumn(index int, value Bit) {
 	column, bit, _ := convertIndex(index)
 
 	if value == 0 {
-		this.columns[column] &= ^bit
+		this.chunks[column] &= ^bit
 	} else {
-		this.columns[column] |= bit
+		this.chunks[column] |= bit
 	}
 }
 
@@ -83,8 +83,8 @@ func (this *Row) Set(other *Row) *Row {
 		panic("cannot assign Rows of different sizes")
 	}
 
-	for i, k := range other.columns {
-		this.columns[i] = k;
+	for i, k := range other.chunks {
+		this.chunks[i] = k;
 	}
 
 	return this
@@ -98,8 +98,8 @@ func (this *Row) Xor(a, b *Row) *Row {
 				this.columnCount, ",", a.columnCount, ",", b.columnCount))
 	}
 
-	for i, _ := range a.columns {
-		this.columns[i] = a.columns[i] ^ b.columns[i]
+	for i, _ := range a.chunks {
+		this.chunks[i] = a.chunks[i] ^ b.chunks[i]
 	}
 
 	return this
@@ -113,8 +113,8 @@ func (this *Row) Neg(other *Row) *Row {
 				this.columnCount, " !=", other.columnCount))
 	}
 
-	for i, k := range other.columns {
-		this.columns[i] = ^k
+	for i, chunk := range other.chunks {
+		this.chunks[i] = ^chunk
 	}
 
 	return this
