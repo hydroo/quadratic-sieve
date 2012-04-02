@@ -88,6 +88,36 @@ func (this *Row) Set(other *Row) *Row {
 }
 
 
+func (this *Row) Xor(a, b *Row) *Row {
+
+	if this.columnCount != a.columnCount || a.columnCount != b.columnCount || this.columnCount != b.columnCount {
+		panic(fmt.Sprint("cannot xor/set rows of differing columnCount:",
+				this.columnCount, ",", a.columnCount, ",", b.columnCount))
+	}
+
+	for i, _ := range a.columns {
+		this.columns[i] = a.columns[i] ^ b.columns[i]
+	}
+
+	return this
+}
+
+
+func (this *Row) Neg(other *Row) *Row {
+
+	if this.columnCount != other.columnCount {
+		panic(fmt.Sprint("cannot set rows of differing columnCount:",
+				this.columnCount, " !=", other.columnCount))
+	}
+
+	for i, k := range other.columns {
+		this.columns[i] = ^k
+	}
+
+	return this
+}
+
+
 /* *** LinearSystem *** **************************************************** */
 type LinearSystem struct {
 	rows map[int]Row
