@@ -5,27 +5,26 @@ import (
 	//"fmt"
 	"math/rand"
 	"testing"
-	"time"
 )
 
 
 /* *** Row ***************************************************************** */
 
-/* *** Get/Set Column ****************************************************** */
+/* *** Get/Set Column *** */
 func TestGetSetColumn(t *testing.T) {
 
-	rand.Seed(int64(time.Now().UnixNano()))
+	rand.Seed(1234) /* use a fixed seed to make this text non-flacky but still complex */
 
 	row := NewRow(1678)
 
+	copyOfRow := NewRow(1678)
+
 	for i := 0; i < 2000; i += 1 {
+		copyOfRow.Set(row)
+
 		/* set random columns to random value and watch for side effects on other columns randomly */
 		value := Bit(rand.Int() % 2)
 		index := rand.Int() % 1678
-		randomOtherIndex1 := rand.Int() % 1678
-		randomOtherIndex2 := rand.Int() % 1678
-		randomOtherValue1 := row.Column(randomOtherIndex1)
-		randomOtherValue2 := row.Column(randomOtherIndex2)
 
 		row.SetColumn(index, value)
 
@@ -33,15 +32,7 @@ func TestGetSetColumn(t *testing.T) {
 			t.Error("Set index", index, "to value", value, "but it's still", row.Column(index))
 		}
 
-		if randomOtherIndex1 != index && randomOtherValue1 != row.Column(randomOtherIndex1) {
-			t.Error("Setting index", index, "to value", value, "changed index", randomOtherIndex1,
-					"from", randomOtherValue1, "to", row.Column(randomOtherIndex1))
-		}
-
-		if randomOtherIndex2 != index && randomOtherValue2 != row.Column(randomOtherIndex2) {
-			t.Error("Setting index", index, "to value", value, "changed index", randomOtherIndex2,
-					"from", randomOtherValue2, "to", row.Column(randomOtherIndex2))
-		}
+		testAllButOneColumnAreEqual(t, index, value, row, copyOfRow)
 	}
 }
 
@@ -107,10 +98,28 @@ func TestConvertIndex(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if c, b, e := ConvertIndex(test.index); c != test.column || b != test.bit || e != test.exp {
+		if c, b, e := convertIndex(test.index); c != test.column || b != test.bit || e != test.exp {
 			t.Error("index", test.index, "should be column", test.column, ", bit",
 					test.bit, "and exp", test.exp, "not", c, ",", b, "and", e)
 		}
+	}
+}
+
+
+/* *** Helper *** ********************************************************** */
+func testAllButOneColumnAreEqual(t *testing.T, indexDoNotCheck int, value Bit, newRow *Row, oldRow *Row) {
+
+	for i := 0; i < newRow.columnCount; i += 1 {
+
+		if i == indexDoNotCheck {
+			continue
+		}
+
+		if newRow.Column(i) != oldRow.Column(i) {
+			t.Error("Index", indexDoNotCheck, "has been set to value", value, ". But index", i, "'s value changed from",
+				oldRow.Column(i), "to", newRow.Column(i))
+		}
+
 	}
 }
 

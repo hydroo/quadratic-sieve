@@ -42,7 +42,7 @@ func NewRow(columnCount int) *Row {
 }
 
 
-func (this Row) CheckIndex(index int) {
+func (this Row) checkIndex(index int) {
 	if index < 0 || index >= this.columnCount {
 		panic(fmt.Sprint("index out of bounds", index, "!! [",0,",",this.columnCount,"]"))
 	}
@@ -50,9 +50,9 @@ func (this Row) CheckIndex(index int) {
 
 
 func (this Row) Column(index int) Bit {
-	this.CheckIndex(index)
+	this.checkIndex(index)
 
-	column, bit, exp := ConvertIndex(index)
+	column, bit, exp := convertIndex(index)
 
 	ret := Bit((this.columns[column] & bit) >> exp)
 	ret.Check()
@@ -62,15 +62,29 @@ func (this Row) Column(index int) Bit {
 
 func (this *Row) SetColumn(index int, value Bit) {
 	value.Check()
-	this.CheckIndex(index)
+	this.checkIndex(index)
 
-	column, bit, _ := ConvertIndex(index)
+	column, bit, _ := convertIndex(index)
 
 	if value == 0 {
 		this.columns[column] &= ^bit
 	} else {
 		this.columns[column] |= bit
 	}
+}
+
+
+func (this *Row) Set(other *Row) *Row {
+
+	if this.columnCount != other.columnCount {
+		panic("cannot assign Rows of different sizes")
+	}
+
+	for i, k := range other.columns {
+		this.columns[i] = k;
+	}
+
+	return this
 }
 
 
@@ -88,7 +102,7 @@ func NewLinearSystem() *LinearSystem {
 
 /* *** helper *** ********************************************************** */
 
-func ConvertIndex(index int) (column int, bit uint64, exp uint32) {
+func convertIndex(index int) (column int, bit uint64, exp uint32) {
 	return index / 64, 1 << (uint(index) % 64), (uint32(index) % 64)
 }
 
