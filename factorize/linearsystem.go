@@ -1,5 +1,6 @@
 package main
 
+/* homogenous system of linear equations with coefficients of GF(2) */
 
 import (
 	"fmt"
@@ -13,6 +14,15 @@ func (this Bit) Check() {
 	if this != 0 && this != 1 {
 		panic(fmt.Sprint("Invalid Value. Should be 0 or 1, but is", this))
 	}
+}
+
+
+func (this Bit) String() string {
+	if this == 0 {
+		return "0"
+	} /* else { */
+
+	return "1"
 }
 
 
@@ -110,6 +120,14 @@ func (this *Row) Neg(other *Row) *Row {
 	return this
 }
 
+
+func (this Row) String() string {
+	var ret string
+	for i := 0; i < this.columnCount; i += 1 {
+		ret += fmt.Sprint(this.Column(i)," ")
+	}
+	return ret
+}
 
 /* *** private *** */
 
