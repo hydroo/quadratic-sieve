@@ -2,7 +2,7 @@ package main
 
 
 import (
-	//"fmt"
+	"fmt"
 	"math/rand"
 	"testing"
 )
@@ -38,6 +38,46 @@ func TestGetSetColumn(t *testing.T) {
 
 
 /* *** LinearSystem ******************************************************** */
+func TestGaussianElimination(t *testing.T) {
+	m := [][]int{
+			{1,0,0},
+			{0,1,0},
+			{0,0,1},
+			}
+
+	system := linearSystemFromIntMatrix(m)
+
+	fmt.Println(system)
+}
+
+
+func linearSystemFromIntMatrix(m [][]int) *LinearSystem {
+
+	if len(m) == 0 {
+		panic("matrix is not supposed to be empty")
+	}
+
+	if len(m[0]) == 0 {
+		panic("matrix is not supposed to be empty")
+	}
+
+
+	rows := len(m)
+	columns := len(m[0])
+
+	ret := NewLinearSystem(rows, columns)
+
+	for j, v := range m {
+		for i, k := range v {
+			if k != 0 && k != 1 {
+				panic(fmt.Sprint("invalid value k", k))
+			}
+			ret.Row(j).SetColumn(i, Bit(k))
+		}
+	}
+
+	return ret
+}
 
 
 /* *** ConvertIndex ******************************************************** */

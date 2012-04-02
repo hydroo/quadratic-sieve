@@ -191,6 +191,14 @@ func (this *LinearSystem) Set(other *LinearSystem) *LinearSystem {
 }
 
 
+func (this *LinearSystem) GaussianElimination(m *LinearSystem) *LinearSystem {
+
+	/* TODO */
+
+	return this
+}
+
+
 func (this LinearSystem) String() string {
 	var ret string
 	for _, k := range this.rows {
