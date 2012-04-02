@@ -42,13 +42,6 @@ func NewRow(columnCount int) *Row {
 }
 
 
-func (this Row) checkIndex(index int) {
-	if index < 0 || index >= this.columnCount {
-		panic(fmt.Sprint("index out of bounds", index, "!! [",0,",",this.columnCount,"]"))
-	}
-}
-
-
 func (this Row) Column(index int) Bit {
 	this.checkIndex(index)
 
@@ -115,6 +108,15 @@ func (this *Row) Neg(other *Row) *Row {
 	}
 
 	return this
+}
+
+
+/* *** private *** */
+
+func (this Row) checkIndex(index int) {
+	if index < 0 || index >= this.columnCount {
+		panic(fmt.Sprint("index out of bounds", index, "!! [",0,",",this.columnCount,"]"))
+	}
 }
 
 
