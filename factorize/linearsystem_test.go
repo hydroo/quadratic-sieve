@@ -39,15 +39,57 @@ func TestGetSetColumn(t *testing.T) {
 
 /* *** LinearSystem ******************************************************** */
 func TestGaussianElimination(t *testing.T) {
-	m := [][]int{
-			{1,0,0},
-			{0,1,0},
-			{0,0,1},
+
+	type Test struct {
+		before, expect [][]int
+	}
+
+	tests := []Test{
+
+			{
+				[][]int{
+				{1,1,1,1},
+				{1,1,1,1},
+				{1,1,1,1},
+				{1,1,1,1},
+				},
+				[][]int{
+				{0,0,0,0},
+				{0,0,0,0},
+				{0,0,0,0},
+				{0,0,0,0},
+				},
+			},
+
+			{
+				[][]int{
+				{1,1,1,1},
+				{1,1,1,1},
+				{1,1,1,1},
+				{1,1,1,1},
+				},
+				[][]int{
+				{0,0,0,0},
+				{0,0,0,0},
+				{0,0,0,0},
+				{0,0,0,0},
+				},
+			},
 			}
 
-	system := linearSystemFromIntMatrix(m)
+	for _, test := range tests {
+		before := linearSystemFromIntMatrix(test.before)
+		after := linearSystemFromIntMatrix(test.before)
+		expect := linearSystemFromIntMatrix(test.expect)
 
-	fmt.Println(system)
+		after.GaussianElimination(before)
+
+		if after.Equals(expect) == false {
+			t.Error("missmatch between result and expectation:\ninput:\n",before,
+					"\nresult:\n", after,"\nexpectation:\n", expect)
+		}
+
+	}
 }
 
 
