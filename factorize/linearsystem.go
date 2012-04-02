@@ -140,14 +140,75 @@ func (this Row) checkIndex(index int) {
 
 /* *** LinearSystem *** **************************************************** */
 type LinearSystem struct {
-	rows map[int]Row
+	rows []*Row
+	rowCount, columnCount int
 }
 
-func NewLinearSystem() *LinearSystem {
+
+func NewLinearSystem(rows, columns int) *LinearSystem {
+
+	if rows < 0 || columns < 0 {
+		panic(fmt.Sprint("columnCount", columns, "< 0 or rowCount", rows, "< 0"))
+	}
+
 	var ret LinearSystem
-	ret.rows = make(map[int]Row)
+	ret.rowCount = rows
+	ret.columnCount = columns
+	ret.rows = make([]*Row, rows)
+
+	for i, _ := range ret.rows {
+		ret.rows[i] = NewRow(columns)
+	}
+
 	return &ret
 }
+
+
+func (this LinearSystem) Row(index int) *Row {
+	this.checkRowIndex(index)
+	return this.rows[index]
+}
+
+
+func (this *LinearSystem) SetRow(index int, row *Row) {
+	this.checkRowIndex(index)
+	this.rows[index].Set(row)
+}
+
+
+func (this *LinearSystem) Set(other *LinearSystem) *LinearSystem {
+
+	if this.rowCount != other.rowCount || this.columnCount != other.columnCount {
+		panic(fmt.Sprint("cannot set a linearsystem to one of different size. columnCount:",
+				this.rowCount, "!=", other.rowCount, "or", this.columnCount, "!=", other.columnCount))
+	}
+
+	for i, row := range other.rows {
+		this.SetRow(i, row)
+	}
+
+	return this
+}
+
+
+func (this LinearSystem) String() string {
+	var ret string
+	for _, k := range this.rows {
+		ret += fmt.Sprint(k)
+		ret += "\n"
+	}
+	return ret
+}
+
+
+/* *** private *** */
+func (this LinearSystem) checkRowIndex(i int) {
+	if i < 0 || i >= this.rowCount {
+		panic(fmt.Sprint("invalid index:", i, " is not element of [0 ,", this.rowCount,")"))
+	}
+}
+
+
 
 
 /* *** helper *** ********************************************************** */
