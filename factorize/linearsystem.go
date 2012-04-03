@@ -41,7 +41,7 @@ func NewRow(columnCount int) *Row {
 
 	var ret Row
 	ret.columnCount = columnCount
-	ret.chunks = make([]uint64, (columnCount-1/64)+1)
+	ret.chunks = make([]uint64, ((columnCount-1)/64)+1)
 
 	for i, _ := range ret.chunks {
 		/* initialize to zero */
