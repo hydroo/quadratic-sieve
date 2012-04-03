@@ -91,6 +91,23 @@ func (this *Row) Set(other *Row) *Row {
 }
 
 
+func (this *Row) Swap(other *Row) *Row {
+
+	if this.columnCount != other.columnCount {
+		panic("cannot assign Rows of different sizes")
+	}
+
+	var tempChunk uint64
+	for i, _ := range other.chunks {
+		tempChunk = this.chunks[i]
+		this.chunks[i] = other.chunks[i];
+		other.chunks[i] = tempChunk;
+	}
+
+	return this
+}
+
+
 func (this *Row) Xor(a, b *Row) *Row {
 
 	if this.columnCount != a.columnCount || a.columnCount != b.columnCount || this.columnCount != b.columnCount {
