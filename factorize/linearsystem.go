@@ -140,7 +140,7 @@ func (this *Row) Neg(other *Row) *Row {
 
 func (this Row) String() string {
 	var ret string
-	for i := 0; i < this.columnCount; i += 1 {
+	for i := this.columnCount - 1; i >= 0; i -= 1 {
 		ret += fmt.Sprint(this.Column(i)," ")
 	}
 	return ret
