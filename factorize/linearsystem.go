@@ -79,9 +79,7 @@ func (this *Row) SetColumn(index int, value Bit) {
 
 func (this *Row) Set(other *Row) *Row {
 
-	if this.columnCount != other.columnCount {
-		panic("cannot assign Rows of different sizes")
-	}
+	this.checkSameSize(other)
 
 	for i, k := range other.chunks {
 		this.chunks[i] = k;
@@ -93,9 +91,7 @@ func (this *Row) Set(other *Row) *Row {
 
 func (this *Row) Swap(other *Row) *Row {
 
-	if this.columnCount != other.columnCount {
-		panic("cannot assign Rows of different sizes")
-	}
+	this.checkSameSize(other)
 
 	var tempChunk uint64
 	for i, _ := range other.chunks {
@@ -110,10 +106,8 @@ func (this *Row) Swap(other *Row) *Row {
 
 func (this *Row) Xor(a, b *Row) *Row {
 
-	if this.columnCount != a.columnCount || a.columnCount != b.columnCount || this.columnCount != b.columnCount {
-		panic(fmt.Sprint("cannot xor/set rows of differing columnCount:",
-				this.columnCount, ",", a.columnCount, ",", b.columnCount))
-	}
+	this.checkSameSize(a)
+	this.checkSameSize(b)
 
 	for i, _ := range a.chunks {
 		this.chunks[i] = a.chunks[i] ^ b.chunks[i]
@@ -125,10 +119,7 @@ func (this *Row) Xor(a, b *Row) *Row {
 
 func (this *Row) Neg(other *Row) *Row {
 
-	if this.columnCount != other.columnCount {
-		panic(fmt.Sprint("cannot set rows of differing columnCount:",
-				this.columnCount, " !=", other.columnCount))
-	}
+	this.checkSameSize(other)
 
 	for i, chunk := range other.chunks {
 		this.chunks[i] = ^chunk
@@ -149,10 +140,7 @@ func (this Row) String() string {
 
 func (this Row) Equals(other *Row) bool {
 
-	if this.columnCount != other.columnCount {
-		panic(fmt.Sprint("cannot compare rows of differing sizes. columnCount",
-				this.columnCount, "!=", other.columnCount))
-	}
+	this.checkSameSize(other)
 
 	for i, chunk := range this.chunks {
 		if chunk != other.chunks[i] {
@@ -169,6 +157,14 @@ func (this Row) Equals(other *Row) bool {
 func (this Row) checkIndex(index int) {
 	if index < 0 || index >= this.columnCount {
 		panic(fmt.Sprint("index out of bounds", index, "!! [",0,",",this.columnCount,")"))
+	}
+}
+
+
+func (this Row) checkSameSize(other *Row) {
+	if this.columnCount != other.columnCount {
+		panic(fmt.Sprint("cannot perform this operation on two rows of differing size. columnCount",
+				this.columnCount, "!=", other.columnCount))
 	}
 }
 
@@ -218,10 +214,7 @@ func (this *LinearSystem) SetRow(index int, row *Row) {
 
 func (this *LinearSystem) Set(other *LinearSystem) *LinearSystem {
 
-	if this.rowCount != other.rowCount || this.columnCount != other.columnCount {
-		panic(fmt.Sprint("cannot set a linearsystem to one of different size. columnCount:",
-				this.rowCount, "!=", other.rowCount, "or", this.columnCount, "!=", other.columnCount))
-	}
+	this.checkSameSize(other)
 
 	for i, row := range other.rows {
 		this.SetRow(i, row)
@@ -251,11 +244,7 @@ func (this LinearSystem) String() string {
 
 func (this LinearSystem) Equals(other *LinearSystem) bool {
 
-	if this.rowCount != other.rowCount || this.columnCount != other.columnCount {
-		panic(fmt.Sprint("cannot compare linear systems of different size. rowCount", this.rowCount, "!=", other.rowCount,
-				"or columnCount", this.columnCount, "!=", other.columnCount))
-	}
-
+	this.checkSameSize(other)
 
 	for i, row := range this.rows {
 		if row.Equals(other.Row(i)) == false {
@@ -275,7 +264,12 @@ func (this LinearSystem) checkRowIndex(i int) {
 }
 
 
+func (this LinearSystem) checkSameSize(other *LinearSystem) {
+	if this.rowCount != other.rowCount || this.columnCount != other.columnCount {
+		panic(fmt.Sprint("cannot perform operation on two linear systems of differing size. columnCount:",
+				this.rowCount, "!=", other.rowCount, "or", this.columnCount, "!=", other.columnCount))
+	}
+}
 
 
 /* *** helper *** ********************************************************** */
-
