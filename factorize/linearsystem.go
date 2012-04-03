@@ -55,7 +55,7 @@ func NewRow(columnCount int) *Row {
 func (this Row) Column(index int) Bit {
 	this.checkIndex(index)
 
-	column, bit, exp := convertIndex(index)
+	column, bit, exp := this.convertIndex(index)
 
 	ret := Bit((this.chunks[column] & bit) >> exp)
 	ret.Check()
@@ -67,7 +67,7 @@ func (this *Row) SetColumn(index int, value Bit) {
 	value.Check()
 	this.checkIndex(index)
 
-	column, bit, _ := convertIndex(index)
+	column, bit, _ := this.convertIndex(index)
 
 	if value == 0 {
 		this.chunks[column] &= ^bit
@@ -168,8 +168,13 @@ func (this Row) Equals(other *Row) bool {
 
 func (this Row) checkIndex(index int) {
 	if index < 0 || index >= this.columnCount {
-		panic(fmt.Sprint("index out of bounds", index, "!! [",0,",",this.columnCount,"]"))
+		panic(fmt.Sprint("index out of bounds", index, "!! [",0,",",this.columnCount,")"))
 	}
+}
+
+
+func (this Row) convertIndex(index int) (column int, bit uint64, exp uint32) {
+	return ((len(this.chunks)*64 - 1 - index) / 64), 1 << (uint(index) % 64), (uint32(index) % 64)
 }
 
 
@@ -273,8 +278,4 @@ func (this LinearSystem) checkRowIndex(i int) {
 
 
 /* *** helper *** ********************************************************** */
-
-func convertIndex(index int) (column int, bit uint64, exp uint32) {
-	return index / 64, 1 << (uint(index) % 64), (uint32(index) % 64)
-}
 
