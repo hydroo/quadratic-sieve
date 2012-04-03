@@ -224,11 +224,40 @@ func (this *LinearSystem) Set(other *LinearSystem) *LinearSystem {
 }
 
 
-func (this *LinearSystem) GaussianElimination(m *LinearSystem) *LinearSystem {
+func (m *LinearSystem) GaussianElimination(other *LinearSystem) *LinearSystem {
 
-	/* TODO */
+	m.checkSameSize(other)
 
-	return this
+	m.Set(other)
+
+	startingRow := 0
+
+	for column := m.columnCount - 1; column >= 0; column -= 1 {
+
+		var row int
+		for row = startingRow; row < m.rowCount; row += 1 {
+			if m.Row(row).Column(column) == 1 {
+				m.Row(startingRow).Swap(m.Row(row))
+				break
+			}
+		}
+
+		if row == m.rowCount {
+			/* no row has been found that has a bit at the wanted column,
+			try again using the next column to the left */
+			continue
+		}
+
+		for row = startingRow + 1; row < m.rowCount; row += 1 {
+			if m.Row(row).Column(column) == 1 {
+				m.Row(row).Xor(m.Row(row),m.Row(startingRow))
+			}
+		}
+
+		startingRow += 1
+	}
+
+	return m
 }
 
 
