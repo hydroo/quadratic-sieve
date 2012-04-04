@@ -333,6 +333,13 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
 	if len(cis) > 0 {
 
+		ls := linearSystemFromExponents(exponents)
+		fmt.Println("factorbase", factorBase)
+		fmt.Println("c(i)", cis)
+		fmt.Println("d(i)", dis)
+		fmt.Println(ls)
+		ls.GaussianElimination(ls)
+		fmt.Println(ls)
 
 		t4 := time.Now()
 
