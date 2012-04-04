@@ -87,7 +87,7 @@ func sieveInterval(n *big.Int) (min, max *big.Int) {
 }
 
 
-func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*big.Int, retExponents [][]int) {
+func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis, retDis []*big.Int, retExponents [][]int) {
 
 	intervalBig := big.NewInt(0)
 	intervalBig.Sub(cMax, cMin)
@@ -98,6 +98,7 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*bi
 	}
 
 	retCis = make([]*big.Int, 0)
+	retDis = make([]*big.Int, 0)
 	retExponents = make([][]int, 0)
 
 
@@ -105,6 +106,7 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*bi
 	ci.Set(cMin)
 
 	di := big.NewInt(0) /* to be factorized */
+	diCopy := big.NewInt(0) /* to be factorized */
 	exponents := make([]int, len(factorBase)) /* exponents for the factors in factorbase for di */
 	rest := big.NewInt(0)
 	quotient := big.NewInt(0)
@@ -115,6 +117,8 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*bi
 		/* d(i) = c(i)^2 - n */
 		di.Mul(ci, ci)
 		di.Sub(di, n)
+
+		diCopy.Set(di)
 
 		/* i = 0 (p = -1) needs special handling */
 		if di.Sign() == -1 {
@@ -150,17 +154,20 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis []*bi
 		/* if d(i) is 1, d(i) has been successfully broken down and can be represented through
 		the factor base -> save c(i) and the exponents for the prime factors in factorbase */
 		if di.Cmp(misc.One) == 0 {
-			cCopy := big.NewInt(0)
-			cCopy.Set(ci)
+			ciCopy := big.NewInt(0)
+			ciCopy.Set(ci)
+			diCopy2 := big.NewInt(0)
+			diCopy2.Set(diCopy)
 			exponentsCopy := make([]int, len(exponents))
 			copy(exponentsCopy, exponents)
 
-			retCis = append(retCis, cCopy)
+			retCis = append(retCis, ciCopy)
+			retDis = append(retDis, diCopy2)
 			retExponents = append(retExponents, exponentsCopy)
 		}
 	}
 
-	return retCis, retExponents
+	return retCis, retDis, retExponents
 }
 
 
@@ -300,7 +307,8 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
 	t3 := time.Now()
 
-	cis, exponents := sieve(n, factorBase, min, max)
+	cis, dis, exponents := sieve(n, factorBase, min, max)
+	fmt.Sprint(dis)
 
 	t4 := time.Now()
 
