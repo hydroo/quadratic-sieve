@@ -294,6 +294,27 @@ func combine(cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.In
 }
 
 
+func linearSystemFromExponents(exponents [][]int) *LinearSystem {
+
+	if len(exponents) == 0 || len(exponents[0]) == 0 {
+		panic("exponents is not supposed to be empty")
+	}
+
+	rows := len(exponents[0])
+	columns := len(exponents)
+
+	ret := NewLinearSystem(rows, columns)
+
+	for i, column := range exponents {
+		for j, value := range column {
+			ret.Row(j).SetColumn(columns-1-i, Bit(value%2))
+		}
+	}
+
+	return ret
+}
+
+
 /* returns nil, nil if n cannot be factorized */
 func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
