@@ -310,46 +310,55 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 	cis, dis, exponents := sieve(n, factorBase, min, max)
 	fmt.Sprint(dis)
 
-	t4 := time.Now()
+	if len(cis) > 0 {
 
-	const combinationsLog2 = 20
 
-	if len(cis) > combinationsLog2 {
-		/* avoid building too large powersets */
-		cis = cis[:combinationsLog2]
-		exponents = exponents[:combinationsLog2]
-	}
+		t4 := time.Now()
 
-	/* usually you want to solve this through an LGS ... TODO? */
-	x, y := combine(cis, exponents, factorBase, n)
+		const combinationsLog2 = 20
 
-	t5 := time.Now()
-
-	fmt.Sprint(t1, t2, t3, t4, t5)
-
-	if x != nil && y != nil && x.Cmp(y) == 1 {
-		x, y = y, x
-	}
-
-	if x != nil && y != nil {
-		fmt.Print(n, " + ", x, y)
-		if benchmark == true {
-			fmt.Print(" wall ", nanoSecondsToString(t5.Sub(t1).Nanoseconds()),
-			" sieve ", nanoSecondsToString(t4.Sub(t3).Nanoseconds()),
-			" combing ", nanoSecondsToString(t5.Sub(t4).Nanoseconds()))
+		if len(cis) > combinationsLog2 {
+			/* avoid building too large powersets */
+			cis = cis[:combinationsLog2]
+			exponents = exponents[:combinationsLog2]
 		}
+
+		/* usually you want to solve this through an LGS ... TODO? */
+		x, y := combine(cis, exponents, factorBase, n)
+
+		t5 := time.Now()
+
+		fmt.Sprint(t1, t2, t3, t4, t5)
+
+		if x != nil && y != nil && x.Cmp(y) == 1 {
+			x, y = y, x
+		}
+
+		if x != nil && y != nil {
+			fmt.Print(n, " + ", x, y)
+			if benchmark == true {
+				fmt.Print(" wall ", nanoSecondsToString(t5.Sub(t1).Nanoseconds()),
+				" sieve ", nanoSecondsToString(t4.Sub(t3).Nanoseconds()),
+				" combing ", nanoSecondsToString(t5.Sub(t4).Nanoseconds()))
+			}
+		} else {
+			fmt.Print(n, " - - -")
+			if benchmark == true {
+				fmt.Print(" wall ", nanoSecondsToString(t5.Sub(t1).Nanoseconds()),
+				" sieve ", nanoSecondsToString(t4.Sub(t3).Nanoseconds()),
+				" combing ", nanoSecondsToString(t5.Sub(t4).Nanoseconds()))
+			}
+		}
+		fmt.Println()
+
+		//fmt.Println("n:", n,  "sieve interval: [", min, "..", max, "] =", max.Int64() - min.Int64(), "factorbase:", factorBase, "c(i)", cis, "exponents:", exponents, "result:", x, "*", y)
+
+		return x, y
+
 	} else {
-		fmt.Print(n, " - - -")
-		if benchmark == true {
-			fmt.Print(" wall ", nanoSecondsToString(t5.Sub(t1).Nanoseconds()),
-			" sieve ", nanoSecondsToString(t4.Sub(t3).Nanoseconds()),
-			" combing ", nanoSecondsToString(t5.Sub(t4).Nanoseconds()))
-		}
+		/* return nil, nil */
 	}
-	fmt.Println()
 
-	//fmt.Println("n:", n,  "sieve interval: [", min, "..", max, "] =", max.Int64() - min.Int64(), "factorbase:", factorBase, "c(i)", cis, "exponents:", exponents, "result:", x, "*", y)
-
-	return x, y
+	return nil, nil
 }
 
