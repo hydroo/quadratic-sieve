@@ -315,6 +315,160 @@ func linearSystemFromExponents(exponents [][]int) *LinearSystem {
 }
 
 
+func createPowerSetRecursively(currentIndex int, currentIndexes []int, set [][]int,
+		retChan chan<- []int, cancelChannel <-chan bool, doneChannel chan<- bool ) bool {
+
+	select {
+		case <-cancelChannel:
+			return true
+		default:
+	}
+
+	if currentIndex == 0 && len(set) == 0 {
+		doneChannel <- true
+		return false
+	}
+
+	if currentIndex == len(set) {
+		return false
+	}
+
+	copyCurrentIndexes := make([]int, len(currentIndexes))
+	copy(copyCurrentIndexes, currentIndexes)
+
+	if createPowerSetRecursively(currentIndex + 1, copyCurrentIndexes, set, retChan, cancelChannel, doneChannel) == true {
+		return true
+	}
+
+	for _, index := range set[currentIndex] {
+		currentIndexes = append(currentIndexes, index)
+	}
+
+	copyCurrentIndexes2 := make([]int, len(currentIndexes))
+	copy(copyCurrentIndexes2, currentIndexes)
+	retChan <- copyCurrentIndexes2
+
+	if createPowerSetRecursively(currentIndex+1, currentIndexes, set, retChan, cancelChannel, doneChannel) == true {
+		return true
+	}
+
+	if currentIndex == 0 {
+		doneChannel <- true
+	}
+
+	return false
+}
+
+
+func findXandY(n *big.Int, cis, dis []*big.Int, exponents [][]int) (*big.Int, *big.Int) {
+
+	ls := linearSystemFromExponents(exponents)
+	ls.GaussianElimination(ls)
+	ls = ls.EliminateEmptyRows()
+	ls = ls.Transpose()
+	usedCombinations := ls.MakeEmptyRows()
+
+	a := big.NewInt(1)
+	b := big.NewInt(1)
+	x := big.NewInt(0)
+	y := big.NewInt(0)
+
+	xTimesY := big.NewInt(0)
+	test := big.NewInt(0)
+	testMod := big.NewInt(0)
+
+	indexSetChannel := make(chan []int, 1000000)
+	doneChannel := make(chan bool)
+	cancelChannel := make(chan bool, 1)
+
+	var indexSet []int
+
+	go createPowerSetRecursively(0, []int{}, usedCombinations, indexSetChannel, cancelChannel, doneChannel)
+
+	togo := -1
+
+	for tries := 0;tries < 20; tries += 1 {
+
+		if togo == 0 {
+			break
+		}
+
+		select {
+			case <-doneChannel:
+				togo = len(indexSetChannel)
+				continue
+			case indexSet = <-indexSetChannel:
+				if togo > -1 {
+					togo -= 1
+				}
+		}
+
+		x.SetInt64(0)
+		y.SetInt64(0)
+
+		for _, index := range indexSet {
+
+			a.Mul(a, cis[index])
+			b.Mul(b, dis[index])
+		}
+
+		b = misc.SquareRootCeil(b)
+
+		x.Add(a,b)
+		x.Mod(x,n)
+
+		y.Sub(a,b)
+		y.Mod(y,n)
+
+		//fmt.Println(a,b,x,y)
+
+		if x.Cmp(misc.Zero) == 0 || x.Cmp(misc.One) == 0 || y.Cmp(misc.Zero) == 0 || y.Cmp(misc.One) == 0 {
+			/* no trivial divisors */
+			continue
+		}
+
+		xTimesY.Mul(x, y)
+		test.DivMod(xTimesY, n, testMod)
+
+		if testMod.Cmp(misc.Zero) != 0 {
+			continue
+		}
+
+		gcd := big.NewInt(0)
+
+		for test.Cmp(misc.One) == 1 {
+
+			gcd.GCD(nil, nil, x, test)
+
+			if gcd.Cmp(misc.One) == 1 {
+				x.Div(x, gcd)
+				test.Div(test, gcd)
+			}
+
+			gcd.GCD(nil, nil, y, test)
+
+			if gcd.Cmp(misc.One) == 1 {
+				y.Div(y, gcd)
+				test.Div(test, gcd)
+			}
+
+		}
+
+		xTimesY.Mul(x, y)
+
+		if xTimesY.Cmp(n) == 0 {
+			//fmt.Println(n, "=", x, "*", y, "(", newUsedIndizes, a, b, ")")
+			cancelChannel <- true
+			return x, y
+		}
+
+	}
+
+	cancelChannel <- true
+	return nil, nil
+}
+
+
 /* returns nil, nil if n cannot be factorized */
 func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
