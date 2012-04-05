@@ -482,18 +482,12 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
 	t3 := time.Now()
 
+	//cis, _, exponents := sieve(n, factorBase, min, max)
 	cis, dis, exponents := sieve(n, factorBase, min, max)
-	fmt.Sprint(dis)
 
 	if len(cis) > 0 {
 
-		ls := linearSystemFromExponents(exponents)
-		fmt.Println("factorbase", factorBase)
-		fmt.Println("c(i)", cis)
-		fmt.Println("d(i)", dis)
-		fmt.Println(ls)
-		ls.GaussianElimination(ls)
-		fmt.Println(ls)
+		x, y := findXandY(n, cis, dis, exponents)
 
 		t4 := time.Now()
 
@@ -506,7 +500,7 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 		}
 
 		/* usually you want to solve this through an LGS ... TODO? */
-		x, y := combine(cis, exponents, factorBase, n)
+		//x, y := combine(cis, exponents, factorBase, n)
 
 		t5 := time.Now()
 
