@@ -307,7 +307,7 @@ func linearSystemFromExponents(exponents [][]int) *LinearSystem {
 
 	for i, column := range exponents {
 		for j, value := range column {
-			ret.Row(j).SetColumn(columns-1-i, Bit(value%2))
+			ret.Row(j).SetColumn(i, Bit(value%2))
 		}
 	}
 
