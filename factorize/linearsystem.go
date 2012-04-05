@@ -129,6 +129,16 @@ func (this *Row) Neg(other *Row) *Row {
 }
 
 
+func (this Row) IsZero() bool {
+	for _, chunk := range this.chunks {
+		if chunk != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+
 func (this Row) String() string {
 	var ret string
 	for i := this.columnCount - 1; i >= 0; i -= 1 {
@@ -224,6 +234,32 @@ func (this *LinearSystem) Set(other *LinearSystem) *LinearSystem {
 }
 
 
+func (this LinearSystem) EliminateEmptyRows() *LinearSystem {
+
+	toBeKept := make(map[int]bool)
+
+	emptyRow := NewRow(this.columnCount)
+
+	for i, row := range this.rows {
+		if row.Equals(emptyRow) == false {
+			toBeKept[i] = true
+		}
+	}
+
+	m := NewLinearSystem(len(toBeKept), this.columnCount)
+
+	j := 0
+	for i := 0; i < this.rowCount; i += 1 {
+		if ok := toBeKept[i]; ok == true {
+			m.SetRow(j, this.Row(i))
+			j += 1
+		}
+	}
+
+	return m
+}
+
+
 func (m *LinearSystem) GaussianElimination(other *LinearSystem) *LinearSystem {
 
 	m.checkSameSize(other)
@@ -257,6 +293,17 @@ func (m *LinearSystem) GaussianElimination(other *LinearSystem) *LinearSystem {
 		startingRow += 1
 	}
 
+	return m
+}
+
+
+func (this LinearSystem) Transpose() *LinearSystem {
+	m := NewLinearSystem(this.columnCount, this.rowCount)
+	for j, row := range this.rows {
+		for i := 0; i < row.columnCount; i += 1 {
+			m.Row(i).SetColumn(j, row.Column(i))
+		}
+	}
 	return m
 }
 
