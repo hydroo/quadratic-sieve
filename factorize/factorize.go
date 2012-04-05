@@ -384,6 +384,7 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 		return x, y
 
 	} else {
+		fmt.Println(n, "- - -")
 		/* return nil, nil */
 	}
 
