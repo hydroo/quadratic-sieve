@@ -297,6 +297,68 @@ func (m *LinearSystem) GaussianElimination(other *LinearSystem) *LinearSystem {
 }
 
 
+func (m *LinearSystem) MakeEmptyRows() [][]int {
+
+	/* for each row keep the indizes of the added rows */
+	solution := NewLinearSystem(m.rowCount, m.rowCount)
+	for i := 0; i < m.rowCount; i += 1 {
+		solution.Row(i).SetColumn(i, 1)
+	}
+
+	startingRow := 0
+
+	for column := m.columnCount - 1; column >= 0; column -= 1 {
+
+		var row int
+		for row = startingRow; row < m.rowCount; row += 1 {
+			if m.Row(row).Column(column) == 1 {
+				startingRow = row
+				break
+			}
+		}
+
+		if row == m.rowCount {
+			/* no row has been found that has a bit at the wanted column,
+			try again using the next column to the left */
+			continue
+		}
+
+		for row = 0; row < m.rowCount; row += 1 {
+
+			if row == startingRow {
+				continue
+			}
+
+			if m.Row(row).Column(column) == 1 {
+				m.Row(row).Xor(m.Row(row),m.Row(startingRow))
+				solution.Row(row).Xor(solution.Row(row),solution.Row(startingRow))
+			}
+		}
+
+		startingRow += 1
+	}
+
+	ret := [][]int{}
+
+	for j := 0; j < m.rowCount; j += 1 {
+		if m.Row(j).IsZero() == true {
+
+			solutionIndexSet := []int{}
+
+			for i := 0; i < solution.Row(j).columnCount; i += 1 {
+				if solution.Row(j).Column(i) == 1 {
+					solutionIndexSet = append(solutionIndexSet, i)
+				}
+			}
+
+			ret = append(ret, solutionIndexSet)
+		}
+	}
+
+	return ret
+}
+
+
 func (this LinearSystem) Transpose() *LinearSystem {
 	m := NewLinearSystem(this.columnCount, this.rowCount)
 	for j, row := range this.rows {
