@@ -403,6 +403,8 @@ func findXandY(n *big.Int, cis, dis []*big.Int, exponents [][]int) (*big.Int, *b
 				}
 		}
 
+		a.SetInt64(1)
+		b.SetInt64(1)
 		x.SetInt64(0)
 		y.SetInt64(0)
 
