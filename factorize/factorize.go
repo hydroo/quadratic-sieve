@@ -197,7 +197,8 @@ type AandBSquared struct {
 }
 
 
-func createPowerSetRecursively(currentIndex int, currentValues AandBSquared, abbs []AandBSquared,
+/* returns true if cancelled through the cancelChannel -> cascade collapse */
+func createPowerSetRecursively(currentIndex int, currentValues AandBSquared, set []AandBSquared,
 		retChan chan<- AandBSquared, cancelChannel <-chan bool, doneChannel chan<- bool ) bool {
 
 	select {
@@ -206,7 +207,7 @@ func createPowerSetRecursively(currentIndex int, currentValues AandBSquared, abb
 		default:
 	}
 
-	if currentIndex == len(abbs) {
+	if currentIndex == len(set) {
 		return false
 	}
 
@@ -214,19 +215,19 @@ func createPowerSetRecursively(currentIndex int, currentValues AandBSquared, abb
 	copyCurrentValues.a.Set(currentValues.a)
 	copyCurrentValues.b.Set(currentValues.b)
 
-	if createPowerSetRecursively(currentIndex + 1, copyCurrentValues, abbs, retChan, cancelChannel, doneChannel) == true {
+	if createPowerSetRecursively(currentIndex+1, copyCurrentValues, set, retChan, cancelChannel, doneChannel) == true {
 		return true
 	}
 
-	currentValues.a.Mul(currentValues.a, abbs[currentIndex].a)
-	currentValues.b.Mul(currentValues.b, abbs[currentIndex].b)
+	currentValues.a.Mul(currentValues.a, set[currentIndex].a)
+	currentValues.b.Mul(currentValues.b, set[currentIndex].b)
 
 	copyCurrentValues = AandBSquared{big.NewInt(0), big.NewInt(0)}
 	copyCurrentValues.a.Set(currentValues.a)
 	copyCurrentValues.b.Set(currentValues.b)
 	retChan <- copyCurrentValues
 
-	if createPowerSetRecursively(currentIndex+1, currentValues, abbs, retChan, cancelChannel, doneChannel) == true {
+	if createPowerSetRecursively(currentIndex+1, currentValues, set, retChan, cancelChannel, doneChannel) == true {
 		return true
 	}
 
@@ -251,7 +252,7 @@ func findXandY(n *big.Int, cis, dis []*big.Int, exponents [][]int) (*big.Int, *b
 	}
 
 
-	abbs := []AandBSquared{}
+	aAndBSquaredList := []AandBSquared{}
 
 	for _, indexSet := range usedCombinations {
 
@@ -263,7 +264,7 @@ func findXandY(n *big.Int, cis, dis []*big.Int, exponents [][]int) (*big.Int, *b
 			bb.Mul(bb, dis[i])
 		}
 
-		abbs = append(abbs, AandBSquared{a, bb})
+		aAndBSquaredList = append(aAndBSquaredList, AandBSquared{a, bb})
 	}
 
 
@@ -275,13 +276,14 @@ func findXandY(n *big.Int, cis, dis []*big.Int, exponents [][]int) (*big.Int, *b
 	testMod := big.NewInt(0)
 	gcd := big.NewInt(0)
 
-	abbChannel := make(chan AandBSquared, 1000000)
+	abbChannel := make(chan AandBSquared, 100000)
 	doneChannel := make(chan bool)
 	cancelChannel := make(chan bool, 1)
 
 	var abb AandBSquared
 
-	go createPowerSetRecursively(0, AandBSquared{big.NewInt(1),big.NewInt(1)}, abbs, abbChannel, cancelChannel, doneChannel)
+	go createPowerSetRecursively(0, AandBSquared{big.NewInt(1),big.NewInt(1)},
+			aAndBSquaredList, abbChannel, cancelChannel, doneChannel)
 
 	numberOfIndexSetsToGo := -1
 
@@ -327,7 +329,6 @@ func findXandY(n *big.Int, cis, dis []*big.Int, exponents [][]int) (*big.Int, *b
 		if multiplicity.Cmp(misc.One) == 1 {
 
 			gcd.GCD(nil, nil, x, multiplicity)
-
 			if x.Cmp(gcd) != 0 {
 				x.Div(x, gcd)
 			}
@@ -335,13 +336,11 @@ func findXandY(n *big.Int, cis, dis []*big.Int, exponents [][]int) (*big.Int, *b
 			multiplicity.Div(multiplicity, gcd)
 
 			gcd.GCD(nil, nil, y, multiplicity)
-
 			if y.Cmp(gcd) != 0 {
 				y.Div(y, gcd)
 			}
 		}
 
-		//fmt.Println(n, "=", x, "*", y, "(", newUsedIndizes, a, b, ")")
 		cancelChannel <- true
 		return x, y
 	}
