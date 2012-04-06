@@ -171,129 +171,6 @@ func sieve(n *big.Int, factorBase []*big.Int, cMin, cMax *big.Int) (retCis, retD
 }
 
 
-func combineRecursively(start int, currentExponents []int, cMul *big.Int, cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.Int) (x_, y_ *big.Int) {
-
-	for i := start; i < len(cis); i += 1 {
-
-		newCurrentExponents := make([]int, len(currentExponents))
-
-		for j, k := range exponents[i] {
-			newCurrentExponents[j] = k + currentExponents[j]
-		}
-
-		newCMul := big.NewInt(1)
-		newCMul.Mul(cMul, cis[i])
-		newCMul.Mod(newCMul, n)
-
-		even := true
-		for _, k := range newCurrentExponents {
-			if k%2 == 1 {
-				even = false
-				break
-			}
-		}
-
-		if even == true {
-
-			b := big.NewInt(1)
-			for i, k := range newCurrentExponents {
-
-				if i == 0 {
-					continue /* minus one makes screw ups */
-				}
-
-				for j := 0; j < k/2; j += 1 {
-					b.Mul(b, factorBase[i])
-				}
-			}
-
-			a := newCMul
-
-			x := big.NewInt(0)
-			x.Add(a, b)
-			x.Mod(x, n)
-
-			y := big.NewInt(0)
-			y.Sub(a, b)
-			y.Mod(y, n)
-
-			if x.Cmp(misc.Zero) == 0 || x.Cmp(misc.One) == 0 || y.Cmp(misc.Zero) == 0 || y.Cmp(misc.One) == 0 {
-				/* no trivial divisors */
-				continue
-			}
-
-			xTimesY := big.NewInt(0)
-			test := big.NewInt(0)
-			testMod := big.NewInt(0)
-
-			xTimesY.Mul(x, y)
-			test.DivMod(xTimesY, n, testMod)
-
-			if testMod.Cmp(misc.Zero) != 0 {
-				continue
-			}
-
-			gcd := big.NewInt(0)
-
-			for test.Cmp(misc.One) == 1 {
-
-				gcd.GCD(nil, nil, x, test)
-
-				if gcd.Cmp(misc.One) == 1 {
-					x.Div(x, gcd)
-					test.Div(test, gcd)
-				}
-
-				gcd.GCD(nil, nil, y, test)
-
-				if gcd.Cmp(misc.One) == 1 {
-					y.Div(y, gcd)
-					test.Div(test, gcd)
-				}
-
-			}
-
-			xTimesY.Mul(x, y)
-
-			if xTimesY.Cmp(n) == 0 {
-				//fmt.Println(n, "=", x, "*", y, "(", newUsedIndizes, a, b, ")")
-				return x, y
-			}
-		}
-
-		x, y := combineRecursively(i+1, newCurrentExponents, newCMul, cis, exponents, factorBase, n)
-		if x != nil && y != nil {
-			return x, y
-		}
-
-	}
-
-	return nil, nil
-}
-
-
-/* usually this step should be performed by a solver for a system of linear equations in Z_2
-but this is too much work for now, so it just tests all (all subsets of the powerset of all exponent vectors)
-the linear combinations of exponent vectors for evenness
-
-returns nil, nil if nothing is found */
-func combine(cis []*big.Int, exponents [][]int, factorBase []*big.Int, n *big.Int) (x, y *big.Int) {
-
-	if len(exponents) == 0 {
-		return nil, nil
-	}
-
-	currentExponents := make([]int, len(exponents[0]))
-	for i, _ := range currentExponents {
-		currentExponents[i] = 0
-	}
-
-	cMul := big.NewInt(1)
-
-	return combineRecursively(0, currentExponents, cMul, cis, exponents, factorBase, n)
-}
-
-
 func linearSystemFromExponents(exponents [][]int) *LinearSystem {
 
 	if len(exponents) == 0 || len(exponents[0]) == 0 {
@@ -484,25 +361,13 @@ func factorize(n *big.Int, benchmark bool) (*big.Int, *big.Int) {
 
 	t3 := time.Now()
 
-	//cis, _, exponents := sieve(n, factorBase, min, max)
 	cis, dis, exponents := sieve(n, factorBase, min, max)
 
 	if len(cis) > 0 {
 
-		x, y := findXandY(n, cis, dis, exponents)
-
 		t4 := time.Now()
 
-		const combinationsLog2 = 20
-
-		if len(cis) > combinationsLog2 {
-			/* avoid building too large powersets */
-			cis = cis[:combinationsLog2]
-			exponents = exponents[:combinationsLog2]
-		}
-
-		/* usually you want to solve this through an LGS ... TODO? */
-		//x, y := combine(cis, exponents, factorBase, n)
+		x, y := findXandY(n, cis, dis, exponents)
 
 		t5 := time.Now()
 
