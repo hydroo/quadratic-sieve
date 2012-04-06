@@ -192,8 +192,13 @@ func linearSystemFromExponents(exponents [][]int) *LinearSystem {
 }
 
 
-func createPowerSetRecursively(currentIndex int, currentIndexes []int, set [][]int,
-		retChan chan<- []int, cancelChannel <-chan bool, doneChannel chan<- bool ) bool {
+type AandBSquared struct {
+	a, b *big.Int
+}
+
+
+func createPowerSetRecursively(currentIndex int, currentValues AandBSquared, abbs []AandBSquared,
+		retChan chan<- AandBSquared, cancelChannel <-chan bool, doneChannel chan<- bool ) bool {
 
 	select {
 		case <-cancelChannel:
@@ -201,31 +206,27 @@ func createPowerSetRecursively(currentIndex int, currentIndexes []int, set [][]i
 		default:
 	}
 
-	if currentIndex == 0 && len(set) == 0 {
-		doneChannel <- true
+	if currentIndex == len(abbs) {
 		return false
 	}
 
-	if currentIndex == len(set) {
-		return false
-	}
+	copyCurrentValues := AandBSquared{big.NewInt(0), big.NewInt(0)}
+	copyCurrentValues.a.Set(currentValues.a)
+	copyCurrentValues.b.Set(currentValues.b)
 
-	copyCurrentIndexes := make([]int, len(currentIndexes))
-	copy(copyCurrentIndexes, currentIndexes)
-
-	if createPowerSetRecursively(currentIndex + 1, copyCurrentIndexes, set, retChan, cancelChannel, doneChannel) == true {
+	if createPowerSetRecursively(currentIndex + 1, copyCurrentValues, abbs, retChan, cancelChannel, doneChannel) == true {
 		return true
 	}
 
-	for _, index := range set[currentIndex] {
-		currentIndexes = append(currentIndexes, index)
-	}
+	currentValues.a.Mul(currentValues.a, abbs[currentIndex].a)
+	currentValues.b.Mul(currentValues.b, abbs[currentIndex].b)
 
-	copyCurrentIndexes2 := make([]int, len(currentIndexes))
-	copy(copyCurrentIndexes2, currentIndexes)
-	retChan <- copyCurrentIndexes2
+	copyCurrentValues = AandBSquared{big.NewInt(0), big.NewInt(0)}
+	copyCurrentValues.a.Set(currentValues.a)
+	copyCurrentValues.b.Set(currentValues.b)
+	retChan <- copyCurrentValues
 
-	if createPowerSetRecursively(currentIndex+1, currentIndexes, set, retChan, cancelChannel, doneChannel) == true {
+	if createPowerSetRecursively(currentIndex+1, currentValues, abbs, retChan, cancelChannel, doneChannel) == true {
 		return true
 	}
 
@@ -245,102 +246,104 @@ func findXandY(n *big.Int, cis, dis []*big.Int, exponents [][]int) (*big.Int, *b
 	ls = ls.Transpose()
 	usedCombinations := ls.MakeEmptyRows()
 
-	a := big.NewInt(1)
-	b := big.NewInt(1)
+	if len(usedCombinations) == 0 {
+		return nil, nil
+	}
+
+
+	abbs := []AandBSquared{}
+
+	for _, indexSet := range usedCombinations {
+
+		a := big.NewInt(1)
+		bb := big.NewInt(1)
+
+		for _, i := range indexSet {
+			a.Mul(a, cis[i])
+			bb.Mul(bb, dis[i])
+		}
+
+		abbs = append(abbs, AandBSquared{a, bb})
+	}
+
+
 	x := big.NewInt(0)
 	y := big.NewInt(0)
 
 	xTimesY := big.NewInt(0)
-	test := big.NewInt(0)
+	multiplicity := big.NewInt(0)
 	testMod := big.NewInt(0)
+	gcd := big.NewInt(0)
 
-	indexSetChannel := make(chan []int, 1000000)
+	abbChannel := make(chan AandBSquared, 1000000)
 	doneChannel := make(chan bool)
 	cancelChannel := make(chan bool, 1)
 
-	var indexSet []int
+	var abb AandBSquared
 
-	go createPowerSetRecursively(0, []int{}, usedCombinations, indexSetChannel, cancelChannel, doneChannel)
+	go createPowerSetRecursively(0, AandBSquared{big.NewInt(1),big.NewInt(1)}, abbs, abbChannel, cancelChannel, doneChannel)
 
-	togo := -1
+	numberOfIndexSetsToGo := -1
 
-	for tries := 0;tries < 20; tries += 1 {
+	for attempts := 0; /*attempts < 100*/; attempts += 1 {
 
-		if togo == 0 {
+		if numberOfIndexSetsToGo == 0 {
 			break
 		}
 
 		select {
 			case <-doneChannel:
-				togo = len(indexSetChannel)
+				numberOfIndexSetsToGo = len(abbChannel)
 				continue
-			case indexSet = <-indexSetChannel:
-				if togo > -1 {
-					togo -= 1
+			case abb = <-abbChannel:
+				if numberOfIndexSetsToGo > -1 {
+					numberOfIndexSetsToGo -= 1
 				}
 		}
 
-		a.SetInt64(1)
-		b.SetInt64(1)
 		x.SetInt64(0)
 		y.SetInt64(0)
 
-		for _, index := range indexSet {
+		abb.b = misc.SquareRootCeil(abb.b)
 
-			a.Mul(a, cis[index])
-			b.Mul(b, dis[index])
-		}
-
-		b = misc.SquareRootCeil(b)
-
-		x.Add(a,b)
+		x.Add(abb.a,abb.b)
 		x.Mod(x,n)
 
-		y.Sub(a,b)
+		y.Sub(abb.a,abb.b)
 		y.Mod(y,n)
 
-		//fmt.Println(a,b,x,y)
-
 		if x.Cmp(misc.Zero) == 0 || x.Cmp(misc.One) == 0 || y.Cmp(misc.Zero) == 0 || y.Cmp(misc.One) == 0 {
-			/* no trivial divisors */
+			/* discard trivial solutions */
 			continue
 		}
 
 		xTimesY.Mul(x, y)
-		test.DivMod(xTimesY, n, testMod)
+		multiplicity.DivMod(xTimesY, n, testMod)
 
 		if testMod.Cmp(misc.Zero) != 0 {
 			continue
 		}
 
-		gcd := big.NewInt(0)
+		if multiplicity.Cmp(misc.One) == 1 {
 
-		for test.Cmp(misc.One) == 1 {
+			gcd.GCD(nil, nil, x, multiplicity)
 
-			gcd.GCD(nil, nil, x, test)
-
-			if gcd.Cmp(misc.One) == 1 {
+			if x.Cmp(gcd) != 0 {
 				x.Div(x, gcd)
-				test.Div(test, gcd)
 			}
 
-			gcd.GCD(nil, nil, y, test)
+			multiplicity.Div(multiplicity, gcd)
 
-			if gcd.Cmp(misc.One) == 1 {
+			gcd.GCD(nil, nil, y, multiplicity)
+
+			if y.Cmp(gcd) != 0 {
 				y.Div(y, gcd)
-				test.Div(test, gcd)
 			}
-
 		}
 
-		xTimesY.Mul(x, y)
-
-		if xTimesY.Cmp(n) == 0 {
-			//fmt.Println(n, "=", x, "*", y, "(", newUsedIndizes, a, b, ")")
-			cancelChannel <- true
-			return x, y
-		}
-
+		//fmt.Println(n, "=", x, "*", y, "(", newUsedIndizes, a, b, ")")
+		cancelChannel <- true
+		return x, y
 	}
 
 	cancelChannel <- true
