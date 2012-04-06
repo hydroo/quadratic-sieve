@@ -41,7 +41,7 @@ func TestFactorize(t *testing.T) {
 		yShould.SetInt64(num.y)
 
 		if xShould.Cmp(x) != 0 || yShould.Cmp(y) != 0 {
-			t.Errorf(fmt.Sprint(num.n, "=", xShould, "*", yShould, "but " ,num.n ,"=", x, "*", y))
+			t.Error(num.n, "=", xShould, "*", yShould, "but " ,num.n ,"=", x, "*", y)
 		} else {
 			fmt.Println(num.n, "=",x,"*",y)
 		}
