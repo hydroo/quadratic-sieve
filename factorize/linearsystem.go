@@ -12,7 +12,7 @@ type Bit int
 
 func (this Bit) Check() {
 	if this != 0 && this != 1 {
-		panic(fmt.Sprint("Invalid Value. Should be 0 or 1, but is", this))
+		panic(fmt.Sprint("Invalid Value. Should be 0 or 1, but is ", this))
 	}
 }
 
@@ -131,7 +131,7 @@ func (this *Row) Neg(other *Row) *Row {
 
 func (this Row) IsZero() bool {
 	for _, chunk := range this.chunks {
-		if chunk != 0 {
+		if chunk != 0x0000000000000000 {
 			return false
 		}
 	}
@@ -166,15 +166,15 @@ func (this Row) Equals(other *Row) bool {
 
 func (this Row) checkIndex(index int) {
 	if index < 0 || index >= this.columnCount {
-		panic(fmt.Sprint("index out of bounds", index, "!! [",0,",",this.columnCount,")"))
+		panic(fmt.Sprint("index out of bounds ", index, " !! [",0,",",this.columnCount,")"))
 	}
 }
 
 
 func (this Row) checkSameSize(other *Row) {
 	if this.columnCount != other.columnCount {
-		panic(fmt.Sprint("cannot perform this operation on two rows of differing size. columnCount",
-				this.columnCount, "!=", other.columnCount))
+		panic(fmt.Sprint("cannot perform this operation on two rows of differing size. columnCount ",
+				this.columnCount, " != ", other.columnCount))
 	}
 }
 
@@ -194,7 +194,7 @@ type LinearSystem struct {
 func NewLinearSystem(rows, columns int) *LinearSystem {
 
 	if rows < 0 || columns < 0 {
-		panic(fmt.Sprint("columnCount", columns, "< 0 or rowCount", rows, "< 0"))
+		panic(fmt.Sprint("columnCount ", columns, " < 0 or rowCount ", rows, " < 0 "))
 	}
 
 	var ret LinearSystem
@@ -397,15 +397,15 @@ func (this LinearSystem) Equals(other *LinearSystem) bool {
 /* *** private *** */
 func (this LinearSystem) checkRowIndex(i int) {
 	if i < 0 || i >= this.rowCount {
-		panic(fmt.Sprint("invalid index:", i, " is not element of [0 ,", this.rowCount,")"))
+		panic(fmt.Sprint("invalid index ", i, " is not element of [0 ,", this.rowCount,")"))
 	}
 }
 
 
 func (this LinearSystem) checkSameSize(other *LinearSystem) {
 	if this.rowCount != other.rowCount || this.columnCount != other.columnCount {
-		panic(fmt.Sprint("cannot perform operation on two linear systems of differing size. columnCount:",
-				this.rowCount, "!=", other.rowCount, "or", this.columnCount, "!=", other.columnCount))
+		panic(fmt.Sprint("cannot perform operation on two linear systems of differing size. columnCount ",
+				this.rowCount, " != ", other.rowCount, " or ", this.columnCount, " != ", other.columnCount))
 	}
 }
 

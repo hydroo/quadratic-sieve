@@ -177,7 +177,7 @@ func linearSystemFromIntMatrix(m [][]int) *LinearSystem {
 	for j, v := range m {
 		for i, k := range v {
 			if k != 0 && k != 1 {
-				panic(fmt.Sprint("invalid value k", k))
+				panic(fmt.Sprint("invalid value k ", k))
 			}
 			ret.Row(j).SetColumn(columns-1-i, Bit(k))
 		}
