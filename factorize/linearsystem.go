@@ -77,19 +77,17 @@ func (this *Row) SetColumn(index int, value Bit) {
 }
 
 
-func (this *Row) Set(other *Row) *Row {
+func (this *Row) Set(other *Row) {
 
 	this.checkSameSize(other)
 
 	for i, k := range other.chunks {
 		this.chunks[i] = k;
 	}
-
-	return this
 }
 
 
-func (this *Row) Swap(other *Row) *Row {
+func (this *Row) Swap(other *Row) {
 
 	this.checkSameSize(other)
 
@@ -99,12 +97,10 @@ func (this *Row) Swap(other *Row) *Row {
 		this.chunks[i] = other.chunks[i];
 		other.chunks[i] = tempChunk;
 	}
-
-	return this
 }
 
 
-func (this *Row) Xor(a, b *Row) *Row {
+func (this *Row) Xor(a, b *Row) {
 
 	this.checkSameSize(a)
 	this.checkSameSize(b)
@@ -112,20 +108,16 @@ func (this *Row) Xor(a, b *Row) *Row {
 	for i, _ := range a.chunks {
 		this.chunks[i] = a.chunks[i] ^ b.chunks[i]
 	}
-
-	return this
 }
 
 
-func (this *Row) Neg(other *Row) *Row {
+func (this *Row) Neg(other *Row) {
 
 	this.checkSameSize(other)
 
 	for i, chunk := range other.chunks {
 		this.chunks[i] = ^chunk
 	}
-
-	return this
 }
 
 
@@ -222,15 +214,13 @@ func (this *LinearSystem) SetRow(index int, row *Row) {
 }
 
 
-func (this *LinearSystem) Set(other *LinearSystem) *LinearSystem {
+func (this *LinearSystem) Set(other *LinearSystem) {
 
 	this.checkSameSize(other)
 
 	for i, row := range other.rows {
 		this.SetRow(i, row)
 	}
-
-	return this
 }
 
 
@@ -298,6 +288,8 @@ func (m *LinearSystem) GaussianElimination(other *LinearSystem) *LinearSystem {
 
 
 func (m *LinearSystem) MakeEmptyRows() [][]int {
+
+	/* similar to gauss jordan */
 
 	/* for each row keep the indizes of the added rows */
 	solution := NewLinearSystem(m.rowCount, m.rowCount)
