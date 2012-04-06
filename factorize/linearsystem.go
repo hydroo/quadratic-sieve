@@ -111,16 +111,6 @@ func (this *Row) Xor(a, b *Row) {
 }
 
 
-func (this *Row) Neg(other *Row) {
-
-	this.checkSameSize(other)
-
-	for i, chunk := range other.chunks {
-		this.chunks[i] = ^chunk
-	}
-}
-
-
 func (this Row) IsZero() bool {
 	for _, chunk := range this.chunks {
 		if chunk != 0x0000000000000000 {
